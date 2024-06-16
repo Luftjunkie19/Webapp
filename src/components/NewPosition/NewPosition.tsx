@@ -3,6 +3,7 @@ import Slippage from '@components/Modals/Slippage/Slippage'
 import { INoConnected, NoConnected } from '@components/NoConnected/NoConnected'
 import { TickPlotPositionData } from '@components/PriceRangePlot/PriceRangePlot'
 import { ALL_FEE_TIERS_DATA, BestTier, PositionOpeningMethod } from '@consts/static'
+import jupiterImg from '../../static/png/JUPITER.png'
 import { addressToTicker, blurContent, parseFeeToPathFee, unblurContent } from '@consts/uiUtils'
 import {
   TokenPriceData,
@@ -16,7 +17,7 @@ import {
 } from '@consts/utils'
 import { Decimal } from '@invariant-labs/sdk/lib/market'
 import { fromFee, getConcentrationArray, getMaxTick } from '@invariant-labs/sdk/lib/utils'
-import { Button, Grid, Typography } from '@material-ui/core'
+import { Box, Button, Grid, Typography } from '@material-ui/core'
 import { Color } from '@material-ui/lab'
 import { BN } from '@project-serum/anchor'
 import { PlotTickData } from '@reducers/positions'
@@ -25,7 +26,7 @@ import { PublicKey } from '@solana/web3.js'
 import backIcon from '@static/svg/back-arrow.svg'
 import settingIcon from '@static/svg/settings.svg'
 import { History } from 'history'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ConcentrationTypeSwitch from './ConcentrationTypeSwitch/ConcentrationTypeSwitch'
 import DepositSelector from './DepositSelector/DepositSelector'
@@ -344,12 +345,12 @@ export const NewPosition: React.FC<INewPosition> = ({
     tokenAIndex === null || tokenBIndex === null
       ? undefined
       : bestTiers.find(
-          tier =>
-            (tier.tokenX.equals(tokens[tokenAIndex].assetAddress) &&
-              tier.tokenY.equals(tokens[tokenBIndex].assetAddress)) ||
-            (tier.tokenX.equals(tokens[tokenBIndex].assetAddress) &&
-              tier.tokenY.equals(tokens[tokenAIndex].assetAddress))
-        )?.bestTierIndex ?? undefined
+        tier =>
+          (tier.tokenX.equals(tokens[tokenAIndex].assetAddress) &&
+            tier.tokenY.equals(tokens[tokenBIndex].assetAddress)) ||
+          (tier.tokenX.equals(tokens[tokenBIndex].assetAddress) &&
+            tier.tokenY.equals(tokens[tokenAIndex].assetAddress))
+      )?.bestTierIndex ?? undefined
 
   const getMinSliderIndex = () => {
     let minimumSliderIndex = 0
@@ -433,6 +434,29 @@ export const NewPosition: React.FC<INewPosition> = ({
     }
   }
 
+  const [jupiterIndexedPools, setJupiterIndexedPools] = useState<any[]>([])
+
+  const newFunction = useCallback(async () => {
+    if (jupiterIndexedPools.length === 0 || !jupiterIndexedPools) {
+      const fetchData = await fetch('https://cache.jup.ag/markets?v=3')
+
+      const getFetchData = await fetchData.json()
+
+      console.log(getFetchData)
+      setJupiterIndexedPools(getFetchData)
+    }
+  }, [jupiterIndexedPools])
+
+  const checkIfIndexed = useMemo(() => {
+    if (jupiterIndexedPools.length > 0) {
+      return jupiterIndexedPools.find((item: any) => item.pubkey === poolAddress)
+    }
+  }, [poolAddress, jupiterIndexedPools])
+
+  useEffect(() => {
+    void newFunction()
+  }, [newFunction])
+
   return (
     <Grid container className={classes.wrapper} direction='column'>
       <Link to='/pool' style={{ textDecoration: 'none', maxWidth: 'fit-content' }}>
@@ -443,7 +467,14 @@ export const NewPosition: React.FC<INewPosition> = ({
       </Link>
 
       <Grid container justifyContent='space-between'>
-        <Typography className={classes.title}>Add new liquidity position</Typography>
+        <Box display={'flex'} width={'100%'} maxWidth={464} justifyContent={'space-between'}>
+          <Typography className={classes.title}>Add new liquidity position</Typography>
+          <img style={{
+            opacity: checkIfIndexed ? 1.0 : 0.2,
+            transition: 'all',
+            transitionDuration: '0.5s'
+          }} loading='lazy' src={jupiterImg} width={32} height={32} />
+        </Box>
         <Grid container item alignItems='center' className={classes.options}>
           {address !== '' ? (
             <MarketIdLabel
@@ -608,10 +639,10 @@ export const NewPosition: React.FC<INewPosition> = ({
         />
 
         {isCurrentPoolExisting ||
-        tokenAIndex === null ||
-        tokenBIndex === null ||
-        tokenAIndex === tokenBIndex ||
-        isWaitingForNewPool ? (
+          tokenAIndex === null ||
+          tokenBIndex === null ||
+          tokenAIndex === tokenBIndex ||
+          isWaitingForNewPool ? (
           <RangeSelector
             poolIndex={poolIndex}
             onChangeRange={onChangeRange}
@@ -624,18 +655,18 @@ export const NewPosition: React.FC<INewPosition> = ({
             }
             blockerInfo={setRangeBlockerInfo()}
             {...(tokenAIndex === null ||
-            tokenBIndex === null ||
-            !isCurrentPoolExisting ||
-            data.length === 0 ||
-            isWaitingForNewPool
+              tokenBIndex === null ||
+              !isCurrentPoolExisting ||
+              data.length === 0 ||
+              isWaitingForNewPool
               ? noRangePlaceholderProps
               : {
-                  data,
-                  midPrice,
-                  globalPrice,
-                  tokenASymbol: tokens[tokenAIndex].symbol,
-                  tokenBSymbol: tokens[tokenBIndex].symbol
-                })}
+                data,
+                midPrice,
+                globalPrice,
+                tokenASymbol: tokens[tokenAIndex].symbol,
+                tokenBSymbol: tokens[tokenBIndex].symbol
+              })}
             ticksLoading={ticksLoading}
             isXtoY={isXtoY}
             tickSpacing={tickSpacing}

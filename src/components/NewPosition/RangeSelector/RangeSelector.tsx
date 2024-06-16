@@ -1,7 +1,8 @@
-import { Button, Grid, Tooltip, Typography } from '@material-ui/core'
+import { Box, Button, FormControl, FormControlLabel, Grid, Switch, Tooltip, Typography } from '@material-ui/core'
 import React, { useState, useEffect, useRef } from 'react'
 import PriceRangePlot, { TickPlotPositionData } from '@components/PriceRangePlot/PriceRangePlot'
 import RangeInput from '@components/Inputs/RangeInput/RangeInput'
+import volumeChart from '../../../static/png/volume-chart.png'
 import {
   calcPrice,
   calcTicksAmountInRange,
@@ -17,6 +18,7 @@ import loader from '@static/gif/loader.gif'
 import useStyles from './style'
 import activeLiquidity from '@static/svg/activeLiquidity.svg'
 import { PositionOpeningMethod } from '@consts/static'
+import { InfoOutlined } from '@material-ui/icons'
 
 export interface IRangeSelector {
   data: PlotTickData[]
@@ -184,12 +186,12 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
     if (positionOpeningMethod === 'range') {
       const initSideDist = Math.abs(
         midPrice.x -
-          calcPrice(
-            Math.max(getMinTick(tickSpacing), midPrice.index - tickSpacing * 15),
-            isXtoY,
-            xDecimal,
-            yDecimal
-          )
+        calcPrice(
+          Math.max(getMinTick(tickSpacing), midPrice.index - tickSpacing * 15),
+          isXtoY,
+          xDecimal,
+          yDecimal
+        )
       )
 
       changeRangeHandler(
@@ -225,12 +227,12 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
     } else {
       const initSideDist = Math.abs(
         midPrice.x -
-          calcPrice(
-            Math.max(getMinTick(tickSpacing), midPrice.index - tickSpacing * 15),
-            isXtoY,
-            xDecimal,
-            yDecimal
-          )
+        calcPrice(
+          Math.max(getMinTick(tickSpacing), midPrice.index - tickSpacing * 15),
+          isXtoY,
+          xDecimal,
+          yDecimal
+        )
       )
 
       setPlotMin(midPrice.x - initSideDist)
@@ -257,25 +259,25 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
     if (leftX < plotMin || rightX > plotMax || canZoomCloser) {
       const leftDist = Math.abs(
         leftX -
-          calcPrice(
-            isXtoY
-              ? Math.max(getMinTick(tickSpacing), left - tickSpacing * 15)
-              : Math.min(getMaxTick(tickSpacing), left + tickSpacing * 15),
-            isXtoY,
-            xDecimal,
-            yDecimal
-          )
+        calcPrice(
+          isXtoY
+            ? Math.max(getMinTick(tickSpacing), left - tickSpacing * 15)
+            : Math.min(getMaxTick(tickSpacing), left + tickSpacing * 15),
+          isXtoY,
+          xDecimal,
+          yDecimal
+        )
       )
       const rightDist = Math.abs(
         rightX -
-          calcPrice(
-            isXtoY
-              ? Math.min(getMaxTick(tickSpacing), right + tickSpacing * 15)
-              : Math.max(getMinTick(tickSpacing), right - tickSpacing * 15),
-            isXtoY,
-            xDecimal,
-            yDecimal
-          )
+        calcPrice(
+          isXtoY
+            ? Math.min(getMaxTick(tickSpacing), right + tickSpacing * 15)
+            : Math.max(getMinTick(tickSpacing), right - tickSpacing * 15),
+          isXtoY,
+          xDecimal,
+          yDecimal
+        )
       )
 
       let dist
@@ -311,6 +313,8 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
     }
   }, [positionOpeningMethod])
 
+  const [isShowHeatMap, setShowHeatMap] = useState(false)
+
   useEffect(() => {
     if (positionOpeningMethod === 'concentration' && !ticksLoading && isMountedRef.current) {
       const index =
@@ -330,18 +334,53 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
       autoZoomHandler(leftRange, rightRange, true)
     }
   }, [midPrice.index, concentrationArray])
-
+  const label = { inputProps: { 'aria-label': 'Switch demo' } }
   return (
     <Grid container className={classes.wrapper} direction='column'>
       <Grid className={classes.headerContainer} container justifyContent='space-between'>
-        <Typography className={classes.header}>Price range</Typography>
-        <PlotTypeSwitch
-          onSwitch={val => {
-            setIsPlotDiscrete(val)
-            onDiscreteChange(val)
-          }}
-          initialValue={isPlotDiscrete ? 1 : 0}
-        />
+        <Box display={'flex'} alignItems={'center'} style={{ gap: 12 }}>
+          <Typography className={classes.header}>Price range</Typography>
+
+          <FormControl component="fieldset">
+
+            <FormControlLabel labelPlacement='start' label={<Tooltip
+              title={<>
+                <Typography className={classes.liquidityTitle}>Volume Heatmap</Typography>
+                <Typography className={classes.liquidityDesc} style={{ marginBottom: 12 }}>
+                  A Volume Heatmap provides a visual representation of data intensity across different categories or time periods, highlighting areas with higher or lower volumes.
+                </Typography>
+                <Grid
+                  container
+                  direction='row'
+                  wrap='nowrap'
+                  alignItems='center'
+                  style={{ marginBottom: 12 }}>
+                  <Typography className={classes.liquidityDesc}>
+                    The volume intensity is represented by a color gradient in the heatmap chart. Volume intensity is determined by the magnitude of data points across different categories or time intervals, with warmer colors (e.g., red, orange) indicating higher volumes and cooler colors (e.g., blue, green) indicating lower volumes.
+                  </Typography>
+                  <img className={classes.liquidityImg} src={volumeChart} />
+                </Grid>
+              </>}
+              placement='bottom'
+              classes={{
+                tooltip: classes.liquidityTooltip
+              }}>
+              <Typography style={{ fontWeight: '400', fontSize: 16, color: '#A9B6BF', display: 'flex', gap: 4, alignItems: 'center' }}>
+                Volume Heatmap <InfoOutlined style={{ fontSize: 14 }} />
+              </Typography>
+            </Tooltip>} control={<Switch onClick={() => setShowHeatMap(!isShowHeatMap)} checked={isShowHeatMap} {...label} />} />
+
+          </FormControl>
+
+          <PlotTypeSwitch
+            onSwitch={val => {
+              setIsPlotDiscrete(val)
+              onDiscreteChange(val)
+            }}
+            initialValue={isPlotDiscrete ? 1 : 0}
+          />
+        </Box>
+
       </Grid>
       <Grid className={classes.infoRow} container justifyContent='flex-end'>
         <Grid container direction='column' alignItems='flex-end'>
@@ -388,6 +427,7 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
       </Grid>
       <Grid container className={classes.innerWrapper}>
         <PriceRangePlot
+          isShownHeatMap={isShowHeatMap}
           className={classes.plot}
           data={data}
           onChangeRange={changeRangeHandler}
@@ -444,13 +484,13 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
             onBlur={() => {
               const newLeft = isXtoY
                 ? Math.min(
-                    rightRange - tickSpacing,
-                    nearestTickIndex(+leftInput, tickSpacing, isXtoY, xDecimal, yDecimal)
-                  )
+                  rightRange - tickSpacing,
+                  nearestTickIndex(+leftInput, tickSpacing, isXtoY, xDecimal, yDecimal)
+                )
                 : Math.max(
-                    rightRange + tickSpacing,
-                    nearestTickIndex(+leftInput, tickSpacing, isXtoY, xDecimal, yDecimal)
-                  )
+                  rightRange + tickSpacing,
+                  nearestTickIndex(+leftInput, tickSpacing, isXtoY, xDecimal, yDecimal)
+                )
 
               changeRangeHandler(newLeft, rightRange)
               autoZoomHandler(newLeft, rightRange)
@@ -483,13 +523,13 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
             onBlur={() => {
               const newRight = isXtoY
                 ? Math.max(
-                    leftRange + tickSpacing,
-                    nearestTickIndex(+rightInput, tickSpacing, isXtoY, xDecimal, yDecimal)
-                  )
+                  leftRange + tickSpacing,
+                  nearestTickIndex(+rightInput, tickSpacing, isXtoY, xDecimal, yDecimal)
+                )
                 : Math.min(
-                    leftRange - tickSpacing,
-                    nearestTickIndex(+rightInput, tickSpacing, isXtoY, xDecimal, yDecimal)
-                  )
+                  leftRange - tickSpacing,
+                  nearestTickIndex(+rightInput, tickSpacing, isXtoY, xDecimal, yDecimal)
+                )
               changeRangeHandler(leftRange, newRight)
               autoZoomHandler(leftRange, newRight)
             }}

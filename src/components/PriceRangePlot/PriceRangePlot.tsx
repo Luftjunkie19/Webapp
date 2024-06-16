@@ -12,6 +12,7 @@ import { nearestTickIndex } from '@consts/utils'
 import { PlotTickData } from '@reducers/positions'
 import loader from '@static/gif/loader.gif'
 import useStyles from './style'
+import { useStyles as useChartStyles } from '../Stats/Liquidity/style'
 
 export type TickPlotPositionData = Omit<PlotTickData, 'y'>
 
@@ -41,7 +42,8 @@ export interface IPriceRangePlot {
   volumeRange?: {
     min: number
     max: number
-  }
+  },
+  isShownHeatMap: boolean,
 }
 
 export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
@@ -67,9 +69,11 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
   coverOnLoading = false,
   hasError = false,
   reloadHandler,
-  volumeRange
+  volumeRange,
+  isShownHeatMap
 }) => {
   const classes = useStyles()
+  const chartClasses = useChartStyles()
 
   const isSmDown = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -381,6 +385,46 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
     )
   }
 
+  const calculateConcentration = (v: number, p1: number, p2: number) => {
+    return Math.floor(v / Math.abs(p1 - p2))
+  }
+
+  const mockedData = [
+    { x: -5, y: -1, volume: 40000 },
+    { x: -1, y: 1, volume: 40000 },
+    { x: 1, y: 2, volume: 40000 },
+    { x: 5, y: 10, volume: 40000 }
+  ]
+
+  const heatmapData = useMemo(() => {
+    return mockedData.sort((a, b) => calculateConcentration(b.volume, b.x, b.y) - calculateConcentration(a.volume, a.x, a.y)).map(d => ({
+      ...d,
+      concentration: calculateConcentration(d.volume, d.x, d.y)
+    }))
+  }, [])
+
+  const displayHeatMap: Layer = () => {
+    if (isShownHeatMap) {
+      const unitLen = innerWidth / (plotMax - plotMin)
+      return (
+        <svg style={{
+          transition: 'all ease-in-out',
+          transitionDuration: '0.5s'
+        }}>
+          {
+            heatmapData.map((item, i) => (<rect height={'100%'} x1={(item.concentration - plotMin) * unitLen}
+              x2={(item.concentration - plotMin) * unitLen} style={{
+                transition: 'ease-in-out all',
+                transitionDuration: '0.5s',
+                fill: '#2EE09A',
+                transitionDelay: `${i * 400}`
+              }} width={'10%'} key={i} fillOpacity={0.2 * i}></rect>))
+          }
+        </svg>
+      )
+    }
+  }
+
   const brushLayer = Brush(
     leftRange.x,
     rightRange.x,
@@ -453,6 +497,33 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
         </Button>
       </Grid>
       <ResponsiveLine
+        tooltip={({ point }) => {
+          const date = point.data.x as Date
+          const day = date.getDate()
+          const month = date.getMonth() + 1
+
+          return (
+            <Grid className={chartClasses.tooltip}>
+              <Typography className={chartClasses.tooltipDate}>{`${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''
+                }${month}`}</Typography>
+              <Typography className={chartClasses.tooltipValue}>
+                ${(point.data.y as number).toFixed(2)}
+              </Typography>
+            </Grid>
+          )
+        }}
+        onMouseEnter={(point, e) => {
+          console.log(point, e.target)
+        }}
+        onMouseLeave={(point, e) => {
+          console.log(point, e.target)
+        }}
+        onMouseMove={(point, e) => {
+          console.log(point, e.target)
+        }}
+        onClick={(point, e) => {
+          console.log(point, e.target)
+        }}
         data={[
           {
             id: 'less than range',
@@ -494,8 +565,8 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
         enablePoints={false}
         enableArea={true}
         legends={[]}
-        isInteractive={false}
-        animate={false}
+        isInteractive={true}
+        animate={true}
         role='application'
         layers={[
           bottomLineLayer,
@@ -509,7 +580,8 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
           volumeRangeLayer,
           brushLayer,
           'axes',
-          'legends'
+          'legends',
+          displayHeatMap
         ]}
         defs={[
           linearGradientDef('gradient', [

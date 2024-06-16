@@ -86,7 +86,7 @@ const Liquidity: React.FC<LiquidityInterface> = ({
           axisTop={null}
           axisRight={null}
           axisLeft={null}
-          curve={'monotoneX'}
+          curve={'cardinal'}
           role='aplication'
           enableGridX={false}
           enableGridY={false}
@@ -128,9 +128,8 @@ const Liquidity: React.FC<LiquidityInterface> = ({
 
             return (
               <Grid className={classes.tooltip}>
-                <Typography className={classes.tooltipDate}>{`${day < 10 ? '0' : ''}${day}/${
-                  month < 10 ? '0' : ''
-                }${month}`}</Typography>
+                <Typography className={classes.tooltipDate}>{`${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''
+                  }${month}`}</Typography>
                 <Typography className={classes.tooltipValue}>
                   ${(point.data.y as number).toFixed(2)}
                 </Typography>
