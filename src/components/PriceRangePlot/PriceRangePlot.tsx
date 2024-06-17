@@ -319,6 +319,18 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
     )
   }
 
+  const calculateConcentration = (v: number, p1: number, p2: number) => {
+    return Math.floor(v / Math.abs(p1 - p2))
+  }
+
+  const concentrationLevelLayers: Layer = ({ innerHeight, points }) => {
+    const opacityLevels = [0.2, 0.4, 0.6, 0.8, 1]
+    if (!isShownHeatMap) {
+      return null
+    }
+    return points.sort((a, b) => calculateConcentration(b.data.y as number, b.y, b.index) - calculateConcentration(a.data.y as number, a.y, a.index)).slice(0, 5).map((point, i) => (<rect onClick={() => console.log(point)} x={point.x} width={'15%'} fillOpacity={isShownHeatMap ? opacityLevels[i] : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={point.index} />))
+  }
+
   const volumeRangeLayer: Layer = ({ innerWidth, innerHeight }) => {
     if (typeof volumeRange === 'undefined') {
       return null
@@ -385,25 +397,6 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
     )
   }
 
-  const calculateConcentration = (v: number, p1: number, p2: number) => {
-    return Math.floor(v / Math.abs(p1 - p2))
-  }
-
-  const displayHeatMapData = useMemo(() => {
-    return currentRange.sort((a, b) => calculateConcentration(b.y, b.x, (b as any).index) - calculateConcentration(a.y, a.x, (a as any).index)).slice(0, 5).map((item) => ({
-    ...item,
-    concentration: calculateConcentration(item.y, item.x, (item as any).index)
-   }))
-  }, [currentRange])
-
-  const displayHeatMap: Layer = () => {
-    if (isShownHeatMap) {
-return (<svg>
-  {displayHeatMapData.map((item, i) => (<rect y={item.y} key={i} x={item.x} height={'100%'} width={'20%'} fillOpacity={0.2 + (i * 0.2)}></rect>))}
-</svg>)
-    }
-  }
-
   const brushLayer = Brush(
     leftRange.x,
     rightRange.x,
@@ -448,6 +441,7 @@ return (<svg>
       className={classNames(classes.container, className)}
       style={style}
       innerRef={containerRef}>
+
       {loading && coverOnLoading ? (
         <Grid container className={classes.cover}>
           <img src={loader} className={classes.loader} />
@@ -475,28 +469,14 @@ return (<svg>
           <img src={ZoomOutIcon} className={classes.zoomIcon} />
         </Button>
       </Grid>
+
       <ResponsiveLine
         tooltip={({ point }) => {
           return (
-            <Grid className={chartClasses.tooltip}>
-              <Typography className={chartClasses.tooltipDate}>{Math.floor(point.y / 1000)}</Typography>
-              <Typography className={chartClasses.tooltipValue}>
-                ${point.data.xFormatted}
-              </Typography>
+            <Grid className={chartClasses.volumeTooltip}>
+              <Typography className={chartClasses.volumeTooltipText}>Volume:  ${Math.floor((point.data.y as number) / 1000000) >= 1 ? Math.floor((point.data.y as number) / 1000000) : Math.floor((point.data.y as number) / 1000)} {Math.floor((point.data.y as number) / 1000000) >= 1 ? 'MLN' : 'K'}</Typography>
             </Grid>
           )
-        }}
-        onMouseEnter={(point, e) => {
-          console.log(point, e.target)
-        }}
-        onMouseLeave={(point, e) => {
-          console.log(point, e.target)
-        }}
-        onMouseMove={(point, e) => {
-          console.log(point, e.target)
-        }}
-        onClick={(point, e) => {
-          console.log(point, e.target)
         }}
         data={[
           {
@@ -514,7 +494,7 @@ return (<svg>
         ]}
         curve={isDiscrete ? (isXtoY ? 'stepAfter' : 'stepBefore') : 'basis'}
         margin={{ top: isSmDown ? 55 : 25, bottom: 15 }}
-        colors={[colors.invariant.pink, colors.invariant.green, colors.invariant.pink]}
+        legends={[]}
         axisTop={null}
         axisRight={null}
         axisLeft={null}
@@ -534,29 +514,32 @@ return (<svg>
           min: 0,
           max: maxVal
         }}
+        role='aplication'
         enableGridX={false}
         enableGridY={false}
         enablePoints={false}
         enableArea={true}
-        legends={[]}
-        isInteractive={true}
-        animate={true}
-        role='application'
-        layers={[
-          bottomLineLayer,
-          'grid',
-          'markers',
-          'areas',
-          'lines',
-          lazyLoadingLayer,
-          globalPriceLayer,
-          currentLayer,
-          volumeRangeLayer,
-          brushLayer,
-          'axes',
-          'legends',
-          displayHeatMap
-        ]}
+        isInteractive
+        useMesh
+        animate
+        colors={colors.invariant.green}
+        theme={{
+          axis: {
+            ticks: {
+              line: { stroke: colors.invariant.component },
+              text: { fill: '#A9B6BF' }
+            }
+          },
+          crosshair: {
+            line: {
+              stroke: colors.invariant.lightGrey,
+              strokeWidth: 1,
+              strokeDasharray: 'solid'
+            }
+          }
+        }}
+        lineWidth={2}
+        layers={[concentrationLevelLayers, 'mesh', 'lines', 'grid', 'areas', 'axes', currentLayer, globalPriceLayer, volumeRangeLayer, bottomLineLayer, lazyLoadingLayer, brushLayer]}
         defs={[
           linearGradientDef('gradient', [
             { offset: 0, color: 'inherit' },
@@ -564,12 +547,9 @@ return (<svg>
             { offset: 100, color: 'inherit', opacity: 0 }
           ])
         ]}
-        fill={[
-          {
-            match: '*',
-            id: 'gradient'
-          }
-        ]}
+        fill={[{ match: '*', id: 'gradient' }]}
+        crosshairType='bottom'
+
       />
     </Grid>
   )

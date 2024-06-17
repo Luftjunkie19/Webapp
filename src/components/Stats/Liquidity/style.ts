@@ -90,6 +90,17 @@ export const useStyles = makeStyles(() => ({
     width: 100,
     padding: 5
   },
+  volumeTooltip: {
+    background: colors.invariant.light,
+    borderRadius: 5,
+    width: 120,
+    padding: 4
+  },
+  volumeTooltipText: {
+    color: colors.white.main,
+    fontSize: 14,
+    textAlign: 'center'
+  },
   tooltipDate: {
     ...typography.caption4,
     color: colors.white.main,

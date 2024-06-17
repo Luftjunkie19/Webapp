@@ -365,7 +365,7 @@ export const RangeSelector: React.FC<IRangeSelector> = ({
               classes={{
                 tooltip: classes.liquidityTooltip
               }}>
-              <Typography style={{ fontWeight: '400', fontSize: 16, color: '#A9B6BF', display: 'flex', gap: 4, alignItems: 'center' }}>
+              <Typography style={{ fontWeight: '400', fontSize: 12, color: '#A9B6BF', display: 'flex', gap: 4, alignItems: 'center' }}>
                 Volume Heatmap <InfoOutlined style={{ fontSize: 14 }} />
               </Typography>
             </Tooltip>} control={<Switch onClick={() => setShowHeatMap(!isShowHeatMap)} checked={isShowHeatMap} {...label} />} />
