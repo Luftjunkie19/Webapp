@@ -389,39 +389,18 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
     return Math.floor(v / Math.abs(p1 - p2))
   }
 
-  const mockedData = [
-    { x: -5, y: -1, volume: 40000 },
-    { x: -1, y: 1, volume: 40000 },
-    { x: 1, y: 2, volume: 40000 },
-    { x: 5, y: 10, volume: 40000 }
-  ]
-
-  const heatmapData = useMemo(() => {
-    return mockedData.sort((a, b) => calculateConcentration(b.volume, b.x, b.y) - calculateConcentration(a.volume, a.x, a.y)).map(d => ({
-      ...d,
-      concentration: calculateConcentration(d.volume, d.x, d.y)
-    }))
-  }, [])
+  const displayHeatMapData = useMemo(() => {
+    return currentRange.sort((a, b) => calculateConcentration(b.y, b.x, (b as any).index) - calculateConcentration(a.y, a.x, (a as any).index)).slice(0, 5).map((item) => ({
+    ...item,
+    concentration: calculateConcentration(item.y, item.x, (item as any).index)
+   }))
+  }, [currentRange])
 
   const displayHeatMap: Layer = () => {
     if (isShownHeatMap) {
-      const unitLen = innerWidth / (plotMax - plotMin)
-      return (
-        <svg style={{
-          transition: 'all ease-in-out',
-          transitionDuration: '0.5s'
-        }}>
-          {
-            heatmapData.map((item, i) => (<rect height={'100%'} x1={(item.concentration - plotMin) * unitLen}
-              x2={(item.concentration - plotMin) * unitLen} style={{
-                transition: 'ease-in-out all',
-                transitionDuration: '0.5s',
-                fill: '#2EE09A',
-                transitionDelay: `${i * 400}`
-              }} width={'10%'} key={i} fillOpacity={0.2 * i}></rect>))
-          }
-        </svg>
-      )
+return (<svg>
+  {displayHeatMapData.map((item, i) => (<rect y={item.y} key={i} x={item.x} height={'100%'} width={'20%'} fillOpacity={0.2 + (i * 0.2)}></rect>))}
+</svg>)
     }
   }
 
@@ -498,16 +477,11 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
       </Grid>
       <ResponsiveLine
         tooltip={({ point }) => {
-          const date = point.data.x as Date
-          const day = date.getDate()
-          const month = date.getMonth() + 1
-
           return (
             <Grid className={chartClasses.tooltip}>
-              <Typography className={chartClasses.tooltipDate}>{`${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''
-                }${month}`}</Typography>
+              <Typography className={chartClasses.tooltipDate}>{Math.floor(point.y / 1000)}</Typography>
               <Typography className={chartClasses.tooltipValue}>
-                ${(point.data.y as number).toFixed(2)}
+                ${point.data.xFormatted}
               </Typography>
             </Grid>
           )
