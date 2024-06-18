@@ -326,9 +326,16 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
   const concentrationLevelLayers: Layer = ({ innerHeight, points }) => {
     const opacityLevels = [0.2, 0.4, 0.6, 0.8, 1]
     if (!isShownHeatMap) {
+      // If the toggle-switch is disabled do not display any thing
       return null
     }
-    return points.sort((a, b) => calculateConcentration(b.data.y as number, b.y, b.index) - calculateConcentration(a.data.y as number, a.y, a.index)).slice(0, 5).map((point, i) => (<rect onClick={() => console.log(point)} x={point.x} width={'15%'} fillOpacity={isShownHeatMap ? opacityLevels[i] : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={point.index} />))
+
+    // If the toggle-switch is enabled:
+    // 1. Take the property of points
+    // 2. Sort the elements inside the array descending by the result of calculateConcentration
+    // 3. Shorten the array to only 5 elements
+    // 4. Map through this array displaying an rectangle with transparency based on concentration
+    return points.sort((a, b) => calculateConcentration(+b.data.yFormatted, b.x, b.y) - calculateConcentration(+a.data.yFormatted, a.x, a.y)).slice(0, 5).map((point, i) => (<rect onClick={() => console.log(point)} x={point.x} width={'20%'} fillOpacity={isShownHeatMap ? opacityLevels[i] : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={point.index} />))
   }
 
   const volumeRangeLayer: Layer = ({ innerWidth, innerHeight }) => {
@@ -474,7 +481,7 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
         tooltip={({ point }) => {
           return (
             <Grid className={chartClasses.volumeTooltip}>
-              <Typography className={chartClasses.volumeTooltipText}>Volume:  ${Math.floor((point.data.y as number) / 1000000) >= 1 ? Math.floor((point.data.y as number) / 1000000) : Math.floor((point.data.y as number) / 1000)} {Math.floor((point.data.y as number) / 1000000) >= 1 ? 'MLN' : 'K'}</Typography>
+              <Typography className={chartClasses.volumeTooltipText}>Volume:  ${Math.floor((point.data.yFormatted as number) / 1000000) >= 1 ? Math.floor((point.data.yFormatted as number) / 1000000) : Math.floor((point.data.yFormatted as number) / 1000)} {Math.floor((point.data.yFormatted as number) / 1000000) >= 1 ? 'MLN' : 'K'}</Typography>
             </Grid>
           )
         }}
