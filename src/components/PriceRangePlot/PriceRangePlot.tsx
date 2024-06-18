@@ -323,19 +323,46 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
     return Math.floor(v / Math.abs(p1 - p2))
   }
 
-  const concentrationLevelLayers: Layer = ({ innerHeight, points }) => {
+const concentrationData = [{
+  p1: -1,
+  p2: -5,
+  volume: 40000
+},
+{
+  p1: -1,
+  p2: 1,
+  volume: 60000
+},
+{
+  p1: 1,
+  p2: 2,
+  volume: 15000
+},
+{
+  p1: 2,
+  p2: 4,
+  volume: 10000
+},
+{
+  p1: 5,
+  p2: 10,
+  volume: 15000
+}
+
+]
+
+  const concentrationLevelLayers: Layer = ({ innerHeight }) => {
     const opacityLevels = [0.2, 0.4, 0.6, 0.8, 1]
     if (!isShownHeatMap) {
       // If the toggle-switch is disabled do not display any thing
       return null
     }
 
-    // If the toggle-switch is enabled:
-    // 1. Take the property of points
-    // 2. Sort the elements inside the array descending by the result of calculateConcentration
-    // 3. Shorten the array to only 5 elements
-    // 4. Map through this array displaying an rectangle with transparency based on concentration
-    return points.sort((a, b) => calculateConcentration(+b.data.yFormatted, b.x, b.y) - calculateConcentration(+a.data.yFormatted, a.x, a.y)).slice(0, 5).map((point, i) => (<rect onClick={() => console.log(point)} x={point.x} width={'20%'} fillOpacity={isShownHeatMap ? opacityLevels[i] : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={point.index} />))
+    const concentrationFromAll = concentrationData.reduce((prev, cur) => {
+      return prev + calculateConcentration(cur.volume, cur.p1, cur.p2)
+    }, 0)
+
+    return concentrationData.sort((a, b) => calculateConcentration(a.volume, a.p1, a.p2) - calculateConcentration(b.volume, b.p1, b.p2)).map((point, i) => (<rect onClick={() => console.log(point)} width={`${Math.floor((calculateConcentration(point.volume, point.p1, point.p2) / (concentrationFromAll)) * 40)}%`} x={0.5 + (i / 100)} fillOpacity={isShownHeatMap ? opacityLevels[i] : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={i} />))
   }
 
   const volumeRangeLayer: Layer = ({ innerWidth, innerHeight }) => {
