@@ -324,6 +324,7 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
   }
 
   const [hoveredVolume, setHoveredVolume] = useState<{volume: number, concentration: number, p1: number, p2: number} | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
 
   const concentrationData = [
     {
@@ -362,13 +363,33 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
 
     const concentrationWidth = [24, 60, 45, 21, 9]
 
-    return (<svg alignmentBaseline='central' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'fit-content' }} onClick={(e) => {
-      console.log(e)
-    }}>
-      {
-    concentrationData.map((item) => ({ ...item, concentration: calculateConcentration(item.volume, item.p1, item.p2) })).sort((a, b) => b.concentration - a.concentration).map((point, i) => (<rect x={`${150 + i * 20}`} onClick={() => { setHoveredVolume({ ...point }) }} width={`${concentrationWidth[i]}`} fillOpacity={isShownHeatMap ? 0.2 + 0.2 * i : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={i} />))
-      }
-    </svg>)
+    return (<svg style={{ display: 'flex', alignItems: 'center', position: 'relative', inset: 0, justifyContent: 'center', width: 'fit-content' }}>
+
+    {concentrationData
+      .map((item) => ({
+        ...item,
+        concentration: calculateConcentration(item.volume, item.p1, item.p2)
+      }))
+      .sort((a, b) => a.concentration - b.concentration)
+      .map((point, i) => (
+        <rect
+          x={`${165 + i * 22}`}
+          onMouseLeave={() => {
+            setHoveredVolume(null)
+          }}
+          onMouseEnter={() => {
+            setHoveredVolume({ ...point })
+            setTooltipPosition({ top: 0, left: 165 + i * 22 })
+          }}
+          width={`${concentrationWidth[i]}`}
+          fillOpacity={isShownHeatMap ? 0.2 + 0.2 * i : 0}
+          style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }}
+          fill={'#2EE09A'}
+          height={innerHeight}
+          key={i}
+        />
+      ))}
+  </svg>)
   }
 
   const volumeRangeLayer: Layer = ({ innerWidth, innerHeight }) => {
@@ -479,7 +500,7 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
     <Grid
       container
       className={classNames(classes.container, className)}
-      style={style}
+      style={{ ...style, position: 'relative', top: 0, left: 0 }}
       innerRef={containerRef}>
 
       {loading && coverOnLoading ? (
@@ -511,14 +532,6 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
       </Grid>
 
       <ResponsiveLine
-        tooltip={({ point }) => {
-           return (
-              <Grid className={chartClasses.volumeTooltip}>
-               <Typography className={chartClasses.volumeTooltipText}>Price: {point.data.x}</Typography>
-               <Typography className={chartClasses.volumeTooltipText}>Volume: {JSON.stringify(hoveredVolume)}</Typography>
-              </Grid>
-            )
-        }}
         data={[
           {
             id: 'less than range',
@@ -580,7 +593,7 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
           }
         }}
         lineWidth={2}
-        layers={[concentrationLevelLayers, 'mesh', 'lines', 'grid', 'areas', 'axes', currentLayer, globalPriceLayer, volumeRangeLayer, bottomLineLayer, lazyLoadingLayer, brushLayer]}
+        layers={[concentrationLevelLayers, 'points', 'lines', 'grid', 'areas', 'axes', currentLayer, globalPriceLayer, volumeRangeLayer, bottomLineLayer, lazyLoadingLayer, brushLayer]}
         defs={[
           linearGradientDef('gradient', [
             { offset: 0, color: 'inherit' },
@@ -592,6 +605,20 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
         crosshairType='bottom'
 
       />
+        {hoveredVolume && (
+      <Grid
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: tooltipPosition.left,
+          width: 'fit-content',
+          height: 'fit-content'
+        }}
+        className={chartClasses.volumeTooltip}
+      >
+        <Typography className={chartClasses.volumeTooltipText}>Volume: {hoveredVolume.volume / 1000}k $</Typography>
+      </Grid>
+    )}
     </Grid>
   )
 }
