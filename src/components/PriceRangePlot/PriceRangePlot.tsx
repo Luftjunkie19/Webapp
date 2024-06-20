@@ -360,15 +360,13 @@ export const PriceRangePlot: React.FC<IPriceRangePlot> = ({
       return null
     }
 
-    const concentrationFromAll = concentrationData.reduce((prev, cur) => {
-      return prev + calculateConcentration(cur.volume, cur.p1, cur.p2)
-    }, 0)
+    const concentrationWidth = [24, 60, 45, 21, 9]
 
-    return (<svg width={'50%'} onClick={(e) => {
+    return (<svg alignmentBaseline='central' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'fit-content' }} onClick={(e) => {
       console.log(e)
     }}>
       {
-    concentrationData.map((item) => ({ ...item, concentration: calculateConcentration(item.volume, item.p1, item.p2) })).sort((a, b) => a.concentration - b.concentration).map((point, i) => (<rect x={`${Math.floor((point.concentration / (concentrationFromAll)) * 95)}%`} onClick={() => { setHoveredVolume({ ...point }) }} width={`${((concentrationFromAll) / point.concentration) * 5}%`} fillOpacity={isShownHeatMap ? 0.2 + 0.2 * i : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={i} />))
+    concentrationData.map((item) => ({ ...item, concentration: calculateConcentration(item.volume, item.p1, item.p2) })).sort((a, b) => b.concentration - a.concentration).map((point, i) => (<rect x={`${150 + i * 20}`} onClick={() => { setHoveredVolume({ ...point }) }} width={`${concentrationWidth[i]}`} fillOpacity={isShownHeatMap ? 0.2 + 0.2 * i : 0} style={{ transition: 'ease-in-out', transitionDuration: '0.5s', transitionDelay: `${i * 0.25}s` }} fill={'#2EE09A'} height={innerHeight} key={i} />))
       }
     </svg>)
   }
