@@ -442,7 +442,6 @@ export const NewPosition: React.FC<INewPosition> = ({
 
       const getFetchData = await fetchData.json()
 
-      console.log(getFetchData)
       setJupiterIndexedPools(getFetchData)
     }
   }, [jupiterIndexedPools])
